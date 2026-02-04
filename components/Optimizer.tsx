@@ -53,7 +53,7 @@ const Optimizer: React.FC<Props> = ({ materials, indicators }) => {
     const chartData = materials
       .map(m => ({ name: m.name, value: parseFloat((result.ratios[m.id] || 0).toFixed(2)) }))
       .filter(d => d.value > 0);
-    
+
     const actualIndicators = calculateActualIndicators(result.ratios);
 
     return (
@@ -66,8 +66,8 @@ const Optimizer: React.FC<Props> = ({ materials, indicators }) => {
           </div>
 
           <div className="mb-6 p-4 bg-blue-50 rounded-lg flex justify-between items-center">
-             <span className="text-blue-800 font-medium">最低单价</span>
-             <span className="text-2xl font-bold text-blue-700">¥{result.cost.toFixed(2)}<span className="text-sm font-normal text-blue-600">/吨</span></span>
+            <span className="text-blue-800 font-medium">最低单价</span>
+            <span className="text-2xl font-bold text-blue-700">¥{result.cost.toFixed(2)}<span className="text-sm font-normal text-blue-600">/吨</span></span>
           </div>
 
           <div className="h-64 w-full">
@@ -82,7 +82,7 @@ const Optimizer: React.FC<Props> = ({ materials, indicators }) => {
                   fill="#8884d8"
                   paddingAngle={5}
                   dataKey="value"
-                  label={({name, value}) => `${name} ${value}%`}
+                  label={({ name, value }) => `${name} ${value}%`}
                 >
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -97,7 +97,7 @@ const Optimizer: React.FC<Props> = ({ materials, indicators }) => {
             {chartData.map((d, i) => (
               <div key={d.name} className="flex justify-between items-center p-2 hover:bg-slate-50 rounded border-b border-slate-50 last:border-0">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length]}}></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
                   <span className="text-slate-700">{d.name}</span>
                 </div>
                 <span className="font-bold text-slate-900">{d.value}%</span>
@@ -107,44 +107,69 @@ const Optimizer: React.FC<Props> = ({ materials, indicators }) => {
         </div>
 
         {/* Validation Card */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-           <h3 className="text-xl font-bold text-slate-800 mb-6">指标验证</h3>
-           <div className="space-y-4">
-             {actualIndicators.map(ind => {
-               const isOk = ind.actual >= ind.min && ind.actual <= ind.max;
-               return (
-                 <div key={ind.id} className="relative pt-1">
-                   <div className="flex mb-1 items-center justify-between">
-                     <div>
-                       <span className={`text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full ${isOk ? 'text-green-600 bg-green-200' : 'text-red-600 bg-red-200'}`}>
-                         {ind.name} ({ind.unit})
-                       </span>
-                     </div>
-                     <div className="text-right">
-                       <span className={`text-xs font-semibold inline-block ${isOk ? 'text-green-600' : 'text-red-600'}`}>
-                         {ind.actual.toFixed(2)}
-                       </span>
-                       <span className="text-xs text-slate-400 ml-1">
-                          [{ind.min} - {ind.max}]
-                       </span>
-                     </div>
-                   </div>
-                   <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-slate-100 relative">
-                      {/* Range Marker */}
-                      <div 
-                        style={{ left: '0%', width: '100%' }} 
-                        className="absolute h-full bg-slate-200"
-                      ></div>
-                       {/* Min/Max zone visual could be complex, simple progress bar for value */}
-                      <div 
-                        style={{ width: `${Math.min(100, Math.max(0, (ind.actual / (ind.max * 1.5)) * 100))}%` }}
-                        className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${isOk ? 'bg-green-500' : 'bg-red-500'}`}
-                      ></div>
-                   </div>
-                 </div>
-               );
-             })}
-           </div>
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-6">指标验证</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {actualIndicators.map(ind => {
+              const isLow = ind.actual < ind.min;
+              const isHigh = ind.actual > ind.max;
+              const isOk = !isLow && !isHigh;
+
+              // 计算差值
+              let diff = 0;
+              let diffLabel = '';
+              if (isLow) {
+                diff = ind.min - ind.actual;
+                diffLabel = `距最小值 -${diff.toFixed(2)}`;
+              } else if (isHigh) {
+                diff = ind.actual - ind.max;
+                diffLabel = `超最大值 +${diff.toFixed(2)}`;
+              } else {
+                // 显示距离边界的余量（取较小值）
+                const marginToMin = ind.actual - ind.min;
+                const marginToMax = ind.max - ind.actual;
+                diff = Math.min(marginToMin, marginToMax);
+                diffLabel = `余量 ${diff.toFixed(2)}`;
+              }
+
+              return (
+                <div
+                  key={ind.id}
+                  className={`p-3 rounded-lg border-2 transition-colors ${isOk
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                      : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                    }`}
+                >
+                  {/* 指标名称 */}
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 truncate">
+                    {ind.name}
+                  </div>
+
+                  {/* 实际值 */}
+                  <div className={`text-lg font-bold ${isOk ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {ind.actual.toFixed(2)}
+                    <span className="text-xs font-normal text-slate-400 dark:text-slate-500 ml-1">{ind.unit}</span>
+                  </div>
+
+                  {/* 目标范围 */}
+                  <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                    目标: {ind.min} ~ {ind.max}
+                  </div>
+
+                  {/* 差值 */}
+                  <div className={`text-xs font-medium mt-1 ${isOk
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-red-500 dark:text-red-400'
+                    }`}>
+                    {diffLabel}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {actualIndicators.length === 0 && (
+            <div className="text-slate-400 dark:text-slate-500 text-center text-sm py-4">暂无指标</div>
+          )}
         </div>
       </div>
     );

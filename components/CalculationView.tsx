@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Indicator, Material, OptimizationResult } from '../types';
 import { calculateOptimalMix } from '../services/solver';
 import { AlertTriangle, Calculator, Check, RefreshCw, ArrowRight, TrendingUp, JapaneseYen, Layers, Sliders, Loader2 } from 'lucide-react';
+import Modal from './Modal';
 
 interface Props {
   materials: Material[];
@@ -27,7 +28,7 @@ const calculateMetrics = (
 ): SchemeMetrics => {
   let cost = 0;
   const indicatorValues: Record<string, number> = {};
-  
+
   indicators.forEach(ind => indicatorValues[ind.id] = 0);
 
   materials.forEach(m => {
@@ -46,10 +47,10 @@ const calculateMetrics = (
     roundedIndicatorValues[key] = Math.round(indicatorValues[key] * 100) / 100;
   }
 
-  return { 
-    cost: Math.round(cost * 100) / 100, 
-    ratios, 
-    indicatorValues: roundedIndicatorValues 
+  return {
+    cost: Math.round(cost * 100) / 100,
+    ratios,
+    indicatorValues: roundedIndicatorValues
   };
 };
 
@@ -61,13 +62,13 @@ const ResultMetricsDisplay: React.FC<{
   indicators: Indicator[];
   showCompositionList?: boolean;
 }> = ({ metrics, materials, indicators, showCompositionList = false }) => {
-  
+
   // Filter and sort materials by percentage for the list view
   const activeMaterials = useMemo(() => {
     return materials
-      .map(m => ({ 
-        ...m, 
-        percent: parseFloat((metrics.ratios[m.id] || 0).toFixed(2)) 
+      .map(m => ({
+        ...m,
+        percent: parseFloat((metrics.ratios[m.id] || 0).toFixed(2))
       }))
       .filter(m => m.percent > 0)
       .sort((a, b) => b.percent - a.percent);
@@ -90,7 +91,7 @@ const ResultMetricsDisplay: React.FC<{
         {showCompositionList && (
           <div>
             <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-               <Layers size={14} /> 配比构成
+              <Layers size={14} /> 配比构成
             </h4>
             {activeMaterials.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -115,48 +116,67 @@ const ResultMetricsDisplay: React.FC<{
         {/* 3. Indicators Check */}
         <div>
           <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-             <Check size={14} /> 指标校验
+            <Check size={14} /> 指标校验
           </h4>
-          <div className="space-y-4">
-             {indicators.map(ind => {
-               const val = metrics.indicatorValues[ind.id] || 0;
-               const isLow = val < ind.min - 0.001; 
-               const isHigh = val > ind.max + 0.001;
-               const isOk = !isLow && !isHigh;
-               
-               const rangeMax = ind.max * 1.5 || 100;
-               const percent = Math.min(100, Math.max(0, (val / rangeMax) * 100));
-               
-               return (
-                 <div key={ind.id}>
-                   <div className="flex justify-between items-end mb-1.5">
-                     <span className={`font-medium text-xs ${isOk ? 'text-slate-600 dark:text-slate-400' : 'text-red-600 dark:text-red-400'}`}>{ind.name}</span>
-                     <div className="text-right flex flex-col items-end">
-                       <div className={`font-mono text-sm leading-none mb-0.5 ${isOk ? 'text-slate-700 dark:text-slate-200' : 'text-red-600 dark:text-red-400 font-bold'}`}>
-                         {val.toFixed(2)} <span className="text-xs font-normal text-slate-400 dark:text-slate-500 scale-90 inline-block">{ind.unit}</span>
-                       </div>
-                       <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                         [{ind.min} ~ {ind.max}]
-                       </div>
-                     </div>
-                   </div>
-                   <div className="relative h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                      <div 
-                        className={`absolute top-0 bottom-0 transition-all duration-500 ${isOk ? 'bg-emerald-500 dark:bg-emerald-600' : 'bg-red-500 dark:bg-red-600'}`}
-                        style={{ width: `${percent}%` }}
-                      ></div>
-                   </div>
-                   {!isOk && (
-                      <div className="text-[10px] text-red-500 dark:text-red-400 mt-1 text-right font-medium flex justify-end items-center gap-1">
-                        <AlertTriangle size={10} />
-                        {isLow ? `低于最小值` : `高于最大值`}
-                      </div>
-                   )}
-                 </div>
-               )
-             })}
-             {indicators.length === 0 && <div className="text-xs text-slate-400 pl-2">暂无指标</div>}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {indicators.map(ind => {
+              const val = metrics.indicatorValues[ind.id] || 0;
+              const isLow = val < ind.min - 0.001;
+              const isHigh = val > ind.max + 0.001;
+              const isOk = !isLow && !isHigh;
+
+              // 计算差值
+              let diffLabel = '';
+              if (isLow) {
+                const diff = ind.min - val;
+                diffLabel = `距最小值 -${diff.toFixed(2)}`;
+              } else if (isHigh) {
+                const diff = val - ind.max;
+                diffLabel = `超最大值 +${diff.toFixed(2)}`;
+              } else {
+                // 显示距离边界的余量（取较小值）
+                const marginToMin = val - ind.min;
+                const marginToMax = ind.max - val;
+                const margin = Math.min(marginToMin, marginToMax);
+                diffLabel = `余量 ${margin.toFixed(2)}`;
+              }
+
+              return (
+                <div
+                  key={ind.id}
+                  className={`p-3 rounded-lg border-2 transition-colors ${isOk
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                    : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                    }`}
+                >
+                  {/* 指标名称 */}
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 truncate">
+                    {ind.name}
+                  </div>
+
+                  {/* 实际值 */}
+                  <div className={`text-lg font-bold font-mono ${isOk ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {val.toFixed(2)}
+                    <span className="text-xs font-normal text-slate-400 dark:text-slate-500 ml-1">{ind.unit}</span>
+                  </div>
+
+                  {/* 目标范围 */}
+                  <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-mono">
+                    目标: {ind.min} ~ {ind.max}
+                  </div>
+
+                  {/* 差值 */}
+                  <div className={`text-xs font-medium mt-1 ${isOk
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-red-500 dark:text-red-400'
+                    }`}>
+                    {diffLabel}
+                  </div>
+                </div>
+              )
+            })}
           </div>
+          {indicators.length === 0 && <div className="text-xs text-slate-400 dark:text-slate-500 py-4 text-center">暂无指标</div>}
         </div>
       </div>
     </div>
@@ -185,8 +205,8 @@ const LoadingOverlay: React.FC<{ message?: string }> = ({ message = "计算中..
 
 // --- Main View ---
 
-const CalculationView: React.FC<Props> = ({ 
-  materials, 
+const CalculationView: React.FC<Props> = ({
+  materials,
   indicators,
   savedRatios,
   savedResult,
@@ -203,24 +223,60 @@ const CalculationView: React.FC<Props> = ({
   });
 
   const [optResult, setOptResult] = useState<OptimizationResult | null>(savedResult || null);
-  
+
   // 新增：计算中状态
   const [isCalculating, setIsCalculating] = useState(false);
 
+  // 新增：百分比输入弹窗状态
+  const [editingMaterial, setEditingMaterial] = useState<{ id: string; name: string } | null>(null);
+  const [editingValue, setEditingValue] = useState('');
+
   const handleRatioChange = (id: string, val: number) => {
-    const clamped = Math.min(100, Math.max(0, val));
+    // 保留两位小数，并限制在 0-100 范围内
+    const rounded = Math.round(val * 100) / 100;
+    const clamped = Math.min(100, Math.max(0, rounded));
     const newRatios = { ...ratios, [id]: clamped };
     setRatios(newRatios);
     onSaveRatios(newRatios);
   };
 
+  // 打开编辑弹窗
+  const openEditModal = (material: { id: string; name: string }) => {
+    setEditingMaterial(material);
+    setEditingValue((ratios[material.id] || 0).toFixed(2));
+  };
+
+  // 关闭编辑弹窗
+  const closeEditModal = () => {
+    setEditingMaterial(null);
+    setEditingValue('');
+  };
+
+  // 确认编辑
+  const confirmEdit = () => {
+    if (editingMaterial) {
+      const parsed = parseFloat(editingValue);
+      if (!isNaN(parsed)) {
+        handleRatioChange(editingMaterial.id, parsed);
+      }
+      closeEditModal();
+    }
+  };
+
+  // 校验输入值
+  const isValidInput = (value: string): boolean => {
+    if (value === '') return true;
+    const num = parseFloat(value);
+    return !isNaN(num) && num >= 0 && num <= 100;
+  };
+
   const handleCalculate = async () => {
     setIsCalculating(true);
-    
+
     // 模拟一点延迟让用户看到加载动画（实际计算很快）
     // 同时使用 setTimeout 将计算放到下一个事件循环，确保 UI 更新
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     try {
       const res = calculateOptimalMix(materials, indicators);
       setOptResult(res);
@@ -237,9 +293,9 @@ const CalculationView: React.FC<Props> = ({
     }
   };
 
-  const manualMetrics = useMemo(() => 
-    calculateMetrics(materials, indicators, ratios), 
-  [materials, indicators, ratios]);
+  const manualMetrics = useMemo(() =>
+    calculateMetrics(materials, indicators, ratios),
+    [materials, indicators, ratios]);
 
   const optimizedMetrics = useMemo(() => {
     if (optResult && optResult.success) {
@@ -248,7 +304,7 @@ const CalculationView: React.FC<Props> = ({
     return null;
   }, [optResult, materials, indicators]);
 
-  const manualTotalPercentage = Object.values(ratios).reduce((a, b) => a + b, 0);
+  const manualTotalPercentage = (Object.values(ratios) as number[]).reduce<number>((a, b) => a + b, 0);
   const isValidTotal = Math.abs(manualTotalPercentage - 100) < 0.1;
 
   if (materials.length === 0) {
@@ -262,16 +318,16 @@ const CalculationView: React.FC<Props> = ({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-full content-start">
-      
+
       {/* 1. Smart Calculation Panel */}
       <div className="flex flex-col bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-blue-200 dark:border-blue-900/50 lg:h-full h-auto overflow-hidden relative">
         {/* Loading Overlay */}
         {isCalculating && <LoadingOverlay />}
-        
+
         {/* Header */}
         <div className="px-5 py-4 border-b border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-900/20 flex justify-between items-center shrink-0">
           <h3 className="font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
-            <Calculator size={20} className="text-blue-600 dark:text-blue-400" /> 
+            <Calculator size={20} className="text-blue-600 dark:text-blue-400" />
             智能计算
           </h3>
           <button
@@ -292,32 +348,31 @@ const CalculationView: React.FC<Props> = ({
         <div className="flex-1 overflow-y-auto p-5 relative">
           {!optResult ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 gap-3 min-h-[200px]">
-               <Calculator size={48} className="opacity-10" />
-               <p className="text-sm">点击右上角按钮开始计算</p>
+              <Calculator size={48} className="opacity-10" />
+              <p className="text-sm">点击右上角按钮开始计算</p>
             </div>
           ) : !optResult.success ? (
-             <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 text-sm rounded-xl border border-red-100 dark:border-red-900/30 flex flex-col items-center gap-2 text-center mt-10">
-               <AlertTriangle size={24} />
-               <p>{optResult.message}</p>
-             </div>
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 text-sm rounded-xl border border-red-100 dark:border-red-900/30 flex flex-col items-center gap-2 text-center mt-10">
+              <AlertTriangle size={24} />
+              <p>{optResult.message}</p>
+            </div>
           ) : optimizedMetrics && (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="flex justify-between items-center mb-6">
-                <div className="text-sm text-slate-500 dark:text-slate-400">
-                  基于 <span className="font-bold text-slate-700 dark:text-slate-200">{indicators.length}</span> 个指标约束找到的最优解
+                <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                  基于 <span className="font-bold text-slate-700 dark:text-slate-200">{indicators.length}</span> 个指标约束找到的
+                  {optResult?.isOptimal !== false ? (
+                    <span className="font-bold text-green-600 dark:text-green-400">最优解</span>
+                  ) : (
+                    <span className="font-bold text-amber-600 dark:text-amber-400">近似解</span>
+                  )}
                 </div>
-                <button 
-                  onClick={applyOptimalToManual}
-                  className="text-xs border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
-                >
-                  应用到手动 <ArrowRight size={12} />
-                </button>
               </div>
-              
-              <ResultMetricsDisplay 
-                metrics={optimizedMetrics} 
-                materials={materials} 
-                indicators={indicators} 
+
+              <ResultMetricsDisplay
+                metrics={optimizedMetrics}
+                materials={materials}
+                indicators={indicators}
                 showCompositionList={true}
               />
             </div>
@@ -328,12 +383,26 @@ const CalculationView: React.FC<Props> = ({
       {/* 2. Manual Adjustment Panel */}
       <div className="flex flex-col bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 lg:h-full h-auto overflow-hidden">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex justify-between items-center shrink-0">
-          <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-             <Sliders size={20} className="text-emerald-600 dark:text-emerald-500" /> 手动配比
-          </h3>
-          <div className={`text-xs font-mono font-medium px-2 py-1 rounded border ${isValidTotal ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800'}`}>
-             Total: {manualTotalPercentage.toFixed(2)}%
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
+          <div className="flex flex-wrap justify-between items-center gap-2">
+            <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <Sliders size={20} className="text-emerald-600 dark:text-emerald-500" /> 手动配比
+            </h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* 总百分比 */}
+              <div className={`text-xs font-mono font-medium px-2 py-1 rounded border ${isValidTotal ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800'}`}>
+                {manualTotalPercentage.toFixed(2)}%
+              </div>
+              {/* 应用计算结果按钮 */}
+              {optResult && optResult.success && (
+                <button
+                  onClick={applyOptimalToManual}
+                  className="text-xs border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                >
+                  应用计算结果 <ArrowRight size={12} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -341,43 +410,34 @@ const CalculationView: React.FC<Props> = ({
         <div className="flex-1 overflow-y-auto p-5">
           {/* Sliders Section */}
           <div className="space-y-4 mb-8">
-             {materials.map(m => (
-               <div key={m.id}>
-                  <div className="flex justify-between mb-1.5 items-end">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{m.name}</label>
-                    <div className="flex items-center gap-2 text-xs relative">
-                      <span className="text-slate-400 dark:text-slate-500">¥{m.price}</span>
-                      <div className="relative flex items-center">
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          value={ratios[m.id] === undefined ? '' : ratios[m.id]}
-                          onChange={e => handleRatioChange(m.id, parseFloat(e.target.value) || 0)}
-                          onBlur={e => {
-                             if(e.target.value === '') handleRatioChange(m.id, 0);
-                          }}
-                          className="font-bold font-mono text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-white dark:hover:bg-slate-600 focus:bg-white dark:focus:bg-slate-600 px-1.5 py-0.5 rounded w-16 text-right border border-transparent hover:border-slate-300 dark:hover:border-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
-                        />
-                        <span className="absolute right-6 pointer-events-none text-slate-400 opacity-0"></span> 
-                        <span className="ml-1 text-slate-500 dark:text-slate-400 font-medium">%</span>
-                      </div>
-                    </div>
+            {materials.map(m => (
+              <div key={m.id}>
+                <div className="flex justify-between mb-1.5 items-end">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{m.name}</label>
+                  <div className="flex items-center gap-2 text-xs relative">
+                    <span className="text-slate-400 dark:text-slate-500">¥{m.price}</span>
+                    <button
+                      onClick={() => openEditModal({ id: m.id, name: m.name })}
+                      className="font-bold font-mono text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-white dark:hover:bg-slate-600 px-2 py-0.5 rounded border border-transparent hover:border-slate-300 dark:hover:border-slate-500 transition-all cursor-pointer flex items-center gap-0.5"
+                    >
+                      {(ratios[m.id] || 0).toFixed(2)}
+                      <span className="text-slate-500 dark:text-slate-400">%</span>
+                    </button>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="0.5"
-                    value={ratios[m.id] || 0}
-                    onChange={e => handleRatioChange(m.id, parseFloat(e.target.value))}
-                    className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600 hover:accent-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                  />
-               </div>
-             ))}
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  value={ratios[m.id] || 0}
+                  onChange={e => handleRatioChange(m.id, parseFloat(e.target.value))}
+                  className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600 hover:accent-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                />
+              </div>
+            ))}
           </div>
-          
+
           <div className="border-t border-slate-100 dark:border-slate-700 my-6"></div>
 
           {/* Results Section */}
@@ -385,16 +445,77 @@ const CalculationView: React.FC<Props> = ({
             <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
               <TrendingUp size={16} className="text-slate-400 dark:text-slate-500" /> 实时分析
             </h4>
-            <ResultMetricsDisplay 
-              metrics={manualMetrics} 
-              materials={materials} 
-              indicators={indicators} 
+            <ResultMetricsDisplay
+              metrics={manualMetrics}
+              materials={materials}
+              indicators={indicators}
               showCompositionList={false}
             />
           </div>
         </div>
       </div>
 
+      {/* 百分比编辑弹窗 */}
+      <Modal
+        isOpen={!!editingMaterial}
+        onClose={closeEditModal}
+        title={editingMaterial ? `修改 ${editingMaterial.name} 百分比` : ''}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              输入百分比 (0-100，保留两位小数)
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={editingValue}
+                onChange={e => setEditingValue(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && isValidInput(editingValue)) {
+                    confirmEdit();
+                  }
+                }}
+                autoFocus
+                className={`w-full p-3 pr-8 text-lg font-mono bg-white dark:bg-slate-700 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-slate-800 dark:text-slate-100 ${isValidInput(editingValue)
+                  ? 'border-slate-300 dark:border-slate-600'
+                  : 'border-red-500 dark:border-red-500'
+                  }`}
+                placeholder="0.00"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-lg">
+                %
+              </span>
+            </div>
+            {!isValidInput(editingValue) && editingValue !== '' && (
+              <p className="mt-2 text-sm text-red-500 dark:text-red-400 flex items-center gap-1">
+                <AlertTriangle size={14} />
+                请输入 0-100 之间的有效数值
+              </p>
+            )}
+          </div>
+
+          {/* 按钮区域 */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+            <button
+              onClick={closeEditModal}
+              className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium transition-colors"
+            >
+              取消
+            </button>
+            <button
+              onClick={confirmEdit}
+              disabled={!isValidInput(editingValue) || editingValue === ''}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              确认
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

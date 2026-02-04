@@ -18,6 +18,7 @@ export interface OptimizationResult {
   cost: number;
   ratios: Record<string, number>; // Material ID -> Percentage (0-100)
   message?: string;
+  isOptimal?: boolean; // true = 最优解, false = 近似解
 }
 
 export interface Scenario {

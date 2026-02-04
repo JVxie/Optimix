@@ -67,13 +67,13 @@ export const calculateOptimalMix = (
     }
 
     const ratios: Record<string, number> = {};
-    
+
     // Extract results. The solver returns keys matching variable names.
     materials.forEach(m => {
-        // javascript-lp-solver might omit variables that are 0, or return them.
-        const val = result[m.id] || 0;
-        // Round to 2 decimal places
-        ratios[m.id] = Math.round(val * 100) / 100;
+      // javascript-lp-solver might omit variables that are 0, or return them.
+      const val = result[m.id] || 0;
+      // Round to 2 decimal places
+      ratios[m.id] = Math.round(val * 100) / 100;
     });
 
     // Calculate cost based on rounded ratios to ensure consistency
@@ -83,9 +83,10 @@ export const calculateOptimalMix = (
 
     return {
       success: true,
-      cost: finalCost, 
-      ratios: ratios, 
+      cost: finalCost,
+      ratios: ratios,
       message: "计算成功",
+      isOptimal: true, // 线性规划求解器找到的解是最优解
     };
 
   } catch (e) {
