@@ -8,8 +8,10 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # npm & build
-android
 node_modules
+*.keystore
+*.jks
+keystore.properties
 dist
 dist-ssr
 release

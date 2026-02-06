@@ -4,7 +4,7 @@
   "version": "2.1.1",
   "type": "module",
   "main": "electron/main.cjs",
-  "author": "JVxie",
+  "author": "JVxie <i@jvxie.com>",
   "license": "MIT",
   "description": "利用线性规划，帮助用户计算原料的最优配比，降低成本。",
   "scripts": {
@@ -19,6 +19,7 @@
     "electron:build:mac:x64": "npm run build && electron-builder --mac --x64 --config",
     "electron:build:mac:universal": "npm run build && electron-builder --mac --universal --config",
     "electron:build:dir": "npm run build && electron-builder --dir --config",
+    "electron:build:linux": "npm run build && electron-builder --linux --config",
     "android:sync": "npm run build && npx cap sync android",
     "android:open": "npx cap open android",
     "android:build": "npm run build && npx cap sync android && npx cap open android"
@@ -142,6 +143,26 @@
         "width": 540,
         "height": 380
       }
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "public/icons/png/512x512.png",
+      "category": "Utility"
     }
   }
 }

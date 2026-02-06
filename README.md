@@ -64,14 +64,63 @@ npm run electron:dev
 
 本项目支持构建为多种平台的应用。构建产物将位于 `dist/` (Web) 或 `release/` (Desktop) 目录。
 
+### 快速构建命令
+
 | 目标平台 | 构建命令 | 说明 |
 | :--- | :--- | :--- |
 | **Web** | `npm run build` | 生成静态文件至 `dist/` |
 | **macOS** | `npm run electron:build:mac` | 生成 .dmg (支持 Intel & Apple Silicon) |
 | **Windows** | `npm run electron:build:win` | 生成 .exe 安装包 |
-| **Android** | `npm run android:build` | 构建并打开 Android Studio |
+| **Android** | 见下方详细说明 | 生成 .apk 安装包 |
 
 > **注意**: 构建 macOS 应用需要 macOS 环境；构建 Windows 应用建议在 Windows 环境下进行以避免兼容性问题。
+
+### 🤖 Android APK 构建
+
+#### 环境要求
+
+- **Android Studio**: 需要安装 [Android Studio](https://developer.android.com/studio)，并配置好 Android SDK
+- **JDK**: 需要安装 JDK 21 或更高版本
+
+#### 构建步骤
+
+```bash
+# 1. 构建 Web 资源
+npm run build
+
+# 2. 同步到 Android 项目
+npx cap sync android
+
+# 3. 构建 Debug APK (无需签名)
+cd android && ./gradlew assembleDebug
+# APK 位置: android/app/build/outputs/apk/debug/app-debug.apk
+
+# 4. 或构建 Release APK (需要签名配置)
+cd android && ./gradlew assembleRelease
+# APK 位置: android/app/build/outputs/apk/release/app-release.apk
+```
+
+#### 签名配置 (Release 版本)
+
+如需构建签名的 Release 版本，请在 `android/app/build.gradle` 中配置签名信息，或创建 `android/keystore.properties` 文件：
+
+```properties
+storeFile=your-keystore.keystore
+storePassword=your-store-password
+keyAlias=your-key-alias
+keyPassword=your-key-password
+```
+
+#### 使用 Android Studio
+
+也可以通过 Android Studio 进行构建和调试：
+
+```bash
+# 打开 Android Studio
+npx cap open android
+```
+
+在 Android Studio 中可以直接点击 **Build > Build Bundle(s) / APK(s) > Build APK(s)** 进行构建。
 
 ## 🏗️ 技术架构
 
@@ -90,6 +139,11 @@ npm run electron:dev
 
 ```text
 optimix/
+├── android/                # Android 原生项目 (Capacitor)
+│   ├── app/
+│   │   ├── src/main/res/   # Android 资源 (图标等)
+│   │   └── build.gradle    # 应用构建配置
+│   └── keystore.properties # 签名配置 (需自行创建，不上传)
 ├── electron/               # Electron 主进程代码
 ├── public/                 # 静态资源 (图标等)
 ├── src/                    # 前端源代码
@@ -107,6 +161,7 @@ optimix/
 │   ├── types/              # TypeScript 类型定义
 │   ├── App.tsx             # 应用根组件
 │   └── main.tsx            # 应用入口
+├── capacitor.config.ts     # Capacitor 配置 (移动端)
 ├── index.html              # Web 入口模板
 ├── package.json            # 项目配置与脚本
 ├── tailwind.config.js      # 样式配置
