@@ -175,7 +175,7 @@ const ScenariosView: React.FC<ScenariosViewProps> = ({
               group flex items-center p-4 rounded-2xl cursor-pointer transition-all duration-200
               active:scale-[0.98] transform
               ${activeScenarioId === scenario.id && !isBatchMode
-                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-md ring-1 ring-blue-200 dark:ring-blue-800'
+                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-md border border-blue-200 dark:border-blue-800 ring-1 ring-blue-200 dark:ring-blue-800'
                 : 'bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 shadow-sm border border-slate-100 dark:border-slate-700'}
               ${isBatchMode && selectedIds.has(scenario.id)
                 ? 'ring-2 ring-blue-400 dark:ring-blue-500 bg-blue-50 dark:bg-blue-900/20'

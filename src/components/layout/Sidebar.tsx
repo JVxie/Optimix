@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Edit2, Check, X, ChevronLeft, AlertCircle, FileSpreadsheet, Download, Upload, ListChecks } from 'lucide-react';
 import { Scenario } from '@/types';
-import Modal from '@/components/common/Modal';
+import AdaptivePanel from '@/components/common/AdaptivePanel';
 import { useToast } from '@/contexts/ToastContext';
 import { exportScenarioToExcel, parseScenarioFromExcel } from '@/services/excelService';
 
@@ -215,7 +215,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               className={`
                 group min-h-[52px] flex items-center p-2 rounded-lg cursor-pointer transition-colors
                 ${activeScenarioId === scenario.id && !isBatchMode
-                  ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 shadow-sm ring-1 ring-blue-200 dark:ring-blue-800'
+                  ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 shadow-sm ring-1 ring-blue-200 dark:ring-blue-800'
                   : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-transparent'}
               `}
             >
@@ -326,7 +326,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Import/Export Modal */}
-      <Modal
+      <AdaptivePanel
         isOpen={isIOModalOpen}
         onClose={() => setIsIOModalOpen(false)}
         title={t('scenario.importExportTitle')}
@@ -389,10 +389,10 @@ const Sidebar: React.FC<SidebarProps> = ({
             onChange={handleFileChange}
           />
         </div>
-      </Modal>
+      </AdaptivePanel>
 
       {/* Delete Confirmation Modal */}
-      <Modal
+      <AdaptivePanel
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
         title={t('scenario.deleteTitle')}
@@ -418,10 +418,10 @@ const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
         </div>
-      </Modal>
+      </AdaptivePanel>
 
       {/* Batch Delete Confirmation Modal */}
-      <Modal
+      <AdaptivePanel
         isOpen={showBatchDeleteConfirm}
         onClose={() => setShowBatchDeleteConfirm(false)}
         title={t('scenario.batchDeleteTitle')}
@@ -446,10 +446,10 @@ const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
         </div>
-      </Modal>
+      </AdaptivePanel>
 
       {/* Alert Modal */}
-      <Modal
+      <AdaptivePanel
         isOpen={!!alertMsg}
         onClose={() => setAlertMsg(null)}
         title={t('common.hint')}
@@ -468,7 +468,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
         </div>
-      </Modal>
+      </AdaptivePanel>
     </>
   );
 };

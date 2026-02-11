@@ -194,6 +194,13 @@ function App() {
   // 方案切换动画处理
   const handleScenarioChange = (newScenarioId: string) => {
     if (newScenarioId === activeScenarioId || isScenarioTransitioning) return;
+
+    // 移动端在方案列表切换时，不应触发全局过渡动画
+    if (!isDesktop && activeTab === 'scenarios') {
+      setActiveScenarioId(newScenarioId);
+      return;
+    }
+
     setIsScenarioTransitioning(true);
     setTimeout(() => {
       setActiveScenarioId(newScenarioId);
