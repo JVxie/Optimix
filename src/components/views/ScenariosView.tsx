@@ -366,7 +366,7 @@ const ScenariosView: React.FC<ScenariosViewProps> = ({
       >
         <div className="space-y-4">
           <p className="text-slate-600 dark:text-slate-300">
-            {t('scenario.deleteConfirm')} <span className="font-bold text-red-600 dark:text-red-400">"{scenarios.find(s => s.id === deleteId)?.name}"</span>
+            {t('scenario.deleteConfirm')} <span className="font-bold text-red-600 dark:text-red-400">"{scenarios.find(s => s.id === deleteId)?.name}"</span> ?
             <br />
             <span className="text-sm opacity-80">{t('scenario.deleteIrreversible')}</span>
           </p>

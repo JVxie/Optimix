@@ -384,7 +384,7 @@ const MaterialManager: React.FC<Props> = ({ materials, indicators, onChange }) =
       >
         <div className="space-y-4">
           <p className="text-slate-600 dark:text-slate-300">
-            {t('material.deleteConfirm')} <span className="font-bold text-red-600 dark:text-red-400">"{materials.find(m => m.id === deleteId)?.name}"</span> 吗？
+            {t('material.deleteConfirm')} <span className="font-bold text-red-600 dark:text-red-400">"{materials.find(m => m.id === deleteId)?.name}"</span> ?
           </p>
           <div className="flex gap-3 justify-end">
             <button

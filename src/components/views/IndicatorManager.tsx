@@ -345,7 +345,7 @@ const IndicatorManager: React.FC<Props> = ({ indicators, onChange }) => {
       >
         <div className="space-y-4">
           <p className="text-slate-600 dark:text-slate-300">
-            {t('indicator.deleteConfirm')} <span className="font-bold text-red-600 dark:text-red-400">"{indicators.find(i => i.id === deleteId)?.name}"</span> {'\u5417\uFF1F'}
+            {t('indicator.deleteConfirm')} <span className="font-bold text-red-600 dark:text-red-400">"{indicators.find(i => i.id === deleteId)?.name}"</span> ?
             <br />
             <span className="text-sm opacity-80">{t('indicator.deleteHint')}</span>
           </p>

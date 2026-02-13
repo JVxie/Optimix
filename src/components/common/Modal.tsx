@@ -113,7 +113,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
         <div className="flex items-center p-4 border-b border-slate-100 dark:border-slate-700 shrink-0">
           <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">{title}</h3>
         </div>
-        <div className="p-6 overflow-y-auto text-slate-700 dark:text-slate-300">
+        <div className="p-6 overflow-y-auto">
           {children}
         </div>
       </div>

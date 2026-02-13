@@ -344,11 +344,11 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800 text-sm text-blue-800 dark:text-blue-300 space-y-2">
             <h4 className="font-bold flex items-center gap-2"><AlertCircle size={16} /> {t('scenario.dataSpec')}</h4>
             <ul className="list-disc pl-5 space-y-1.5 text-blue-700/80 dark:text-blue-300/80">
-              <li>{t('scenario.spec1')}</li>
-              <li>{t('scenario.spec2')}</li>
-              <li>{t('scenario.spec3')}</li>
-              <li>{t('scenario.spec4')}</li>
-              <li>{t('scenario.spec5')}</li>
+              <li><strong>{t('scenario.spec1Title')}</strong>{t('scenario.spec1Desc')}</li>
+              <li><strong>{t('scenario.spec2Title')}</strong>{t('scenario.spec2Desc')}</li>
+              <li><strong>{t('scenario.spec3Title')}</strong>{t('scenario.spec3Desc')}</li>
+              <li><strong>{t('scenario.spec4Title')}</strong>{t('scenario.spec4Desc')}</li>
+              <li><strong>{t('scenario.spec5Title')}</strong>{t('scenario.spec5Desc')}</li>
             </ul>
           </div>
 
